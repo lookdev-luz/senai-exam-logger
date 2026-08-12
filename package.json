@@ -1,10 +1,45 @@
 {
   "name": "senai-exam-logger",
+  "displayName": "SENAI Exam Logger",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Extensão privada para avaliações práticas de programação do SENAI.",
+  "private": true,
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onCommand:senaiExamLogger.startExam",
+    "onCommand:senaiExamLogger.finishExam",
+    "onCommand:senaiExamLogger.status"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "senaiExamLogger.startExam",
+        "title": "Iniciar Prova",
+        "category": "SENAI Exam Logger"
+      },
+      {
+        "command": "senaiExamLogger.finishExam",
+        "title": "Finalizar Prova",
+        "category": "SENAI Exam Logger"
+      },
+      {
+        "command": "senaiExamLogger.status",
+        "title": "Status",
+        "category": "SENAI Exam Logger"
+      }
+    ]
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js",
+    "check": "tsc --noEmit",
+    "typecheck": "npm run check",
+    "watch": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js --watch"
   },
   "keywords": [],
   "author": "",
