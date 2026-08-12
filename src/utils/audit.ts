@@ -2,7 +2,6 @@ import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { AuditEvent, EventType } from '../types';
 
-export const INSERTED_TEXT_LIMIT = 4_096;
 export const PREVIEW_LIMIT = 500;
 
 export function sha256(content: string | Buffer): string {
@@ -28,14 +27,26 @@ export function isBulkInsert(text: string, characterThreshold: number, lineThres
   return text.length >= characterThreshold || lineCount(text) >= lineThreshold;
 }
 
-export function storedText(text: string): Record<string, unknown> {
-  if (text.length <= INSERTED_TEXT_LIMIT) return { insertedText: text, insertedTextTruncated: false };
+export function storedText(text: string, limit = 4_096): Record<string, unknown> {
+  if (text.length <= limit) return { insertedText: text, truncated: false };
   return {
     insertedText: text.slice(0, PREVIEW_LIMIT),
-    insertedTextTruncated: true,
+    truncated: true,
     insertedTextHash: sha256(text),
     insertedTextLength: text.length,
   };
+}
+
+export interface InternalMatch { matchedCharacters: number; similarity: number; matchMethod: 'exact-substring' | 'line-overlap'; }
+
+export function correlateInternalCopy(inserted: string, source: string, minimumLength = 40): InternalMatch | undefined {
+  if (inserted.length < minimumLength || source.length < minimumLength) return undefined;
+  if (source.includes(inserted)) return { matchedCharacters: inserted.length, similarity: 1, matchMethod: 'exact-substring' };
+  const lines = inserted.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  if (!lines.length) return undefined;
+  const sourceLines = new Set(source.split(/\r?\n/).map((line) => line.trim()).filter(Boolean));
+  const matchedCharacters = lines.filter((line) => sourceLines.has(line)).reduce((sum, line) => sum + line.length, 0);
+  return { matchedCharacters, similarity: matchedCharacters / Math.max(1, lines.reduce((sum, line) => sum + line.length, 0)), matchMethod: 'line-overlap' };
 }
 
 export function createEvent(sessionId: string, eventType: EventType, fields: Partial<AuditEvent> = {}): AuditEvent {

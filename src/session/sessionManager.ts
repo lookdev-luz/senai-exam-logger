@@ -11,6 +11,7 @@ export class SessionManager {
 
   constructor(private readonly storage: SessionStorage, private readonly extensionVersion: string) {}
   get current(): ExamSession | undefined { return this.active; }
+  get sessionStorage(): SessionStorage { return this.storage; }
 
   async recover(): Promise<boolean> {
     const session = await this.storage.recoverActive();
@@ -50,6 +51,7 @@ export class SessionManager {
     const relativeFile = this.relative(document.uri);
     if (!session || relativeFile === undefined) return;
     const result = await this.storage.createSnapshot(session, relativeFile, document.getText());
+    if (!result) return;
     await this.log('SNAPSHOT_CREATED', { file: document.uri.toString(), relativeFile, languageId: document.languageId, metadata: { snapshotPath: result.path, sha256: result.hash, size: result.size } });
   }
 
@@ -57,12 +59,15 @@ export class SessionManager {
     const session = this.active;
     if (!session) return undefined;
     for (const document of openDocuments) if (this.contains(document.uri)) await this.snapshot(document);
-    await this.log('SESSION_FINISHED');
-    this.acceptingEvents = false;
     session.finishedAt = new Date().toISOString();
     session.status = 'FINISHED';
-    await this.storage.writeSession(session);
+    await this.log('SESSION_FINISHED');
+    await this.log('REPORT_GENERATED', { metadata: { report: 'report.html' } });
     await this.storage.flush();
+    session.eventsSha256 = await this.storage.eventsHash(session.sessionId);
+    await this.storage.writeSession(session);
+    await this.storage.writeReport(session);
+    this.acceptingEvents = false;
     this.active = undefined;
     return session;
   }

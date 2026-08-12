@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import test from 'node:test';
-import { createEvent, isBulkInsert, isPathInside, safeSnapshotPath, serializeEvent, sha256, storedText } from '../src/utils/audit';
+import { correlateInternalCopy, createEvent, isBulkInsert, isPathInside, safeSnapshotPath, serializeEvent, sha256, storedText } from '../src/utils/audit';
+import { calculateFileStatistics, duration, generateReportHtml, groupTimeline } from '../src/report/report';
+import type { AuditEvent, ExamSession } from '../src/types';
 
 test('detecta caminhos dentro e fora do workspace sem confundir prefixos', () => {
   const root = path.resolve('/tmp', 'exam');
@@ -32,7 +34,37 @@ test('serializa evento em uma única linha JSONL e limita conteúdo grande', () 
   assert.equal(line.endsWith('\n'), true);
   assert.deepEqual(JSON.parse(line), event);
   const content = storedText('x'.repeat(5_000));
-  assert.equal(content.insertedTextTruncated, true);
+  assert.equal(content.truncated, true);
   assert.equal(typeof content.insertedTextHash, 'string');
   assert.equal((content.insertedText as string).length, 500);
+});
+
+test('correlaciona conteúdo interno exato e parcial de forma determinística', () => {
+  assert.equal(correlateInternalCopy('função suficientemente grande para comparar com segurança', 'prefixo função suficientemente grande para comparar com segurança sufixo')?.similarity, 1);
+  const partial = correlateInternalCopy('linha compartilhada longa o bastante\nlinha diferente também longa', 'linha compartilhada longa o bastante\noutra linha');
+  assert.ok(partial && partial.similarity > 0 && partial.similarity < 1);
+});
+
+test('calcula estatísticas, duração ativa e agrupamento visual', () => {
+  const base = { eventId: 'e', sessionId: 's' };
+  const events: AuditEvent[] = [
+    { ...base, timestamp: '2026-01-01T00:00:00.000Z', eventType: 'DOCUMENT_OPENED', relativeFile: 'main.c' },
+    { ...base, timestamp: '2026-01-01T00:00:01.000Z', eventType: 'DOCUMENT_ACTIVATED', relativeFile: 'main.c' },
+    { ...base, timestamp: '2026-01-01T00:00:02.000Z', eventType: 'DOCUMENT_CHANGED', relativeFile: 'main.c', metadata: { changes: [{ insertedTextLength: 3, removedTextLength: 1 }] } },
+    { ...base, timestamp: '2026-01-01T00:00:03.000Z', eventType: 'DOCUMENT_CHANGED', relativeFile: 'main.c', metadata: { changes: [{ insertedTextLength: 2, removedTextLength: 0 }] } },
+    { ...base, timestamp: '2026-01-01T00:00:05.000Z', eventType: 'DOCUMENT_DEACTIVATED', relativeFile: 'main.c' },
+  ];
+  const stats = calculateFileStatistics(events);
+  assert.deepEqual({ active: stats[0].activeDurationMs, edits: stats[0].editCount, inserted: stats[0].charactersInserted }, { active: 4000, edits: 2, inserted: 5 });
+  assert.equal(groupTimeline(events).at(-2)?.events.length, 2);
+  assert.equal(duration(215_000), '3m 35s');
+});
+
+test('gera relatório HTML offline com sessão, resumo e timeline escapada', () => {
+  const session: ExamSession = { sessionId: 'session-1', studentName: '<Aluno>', className: 'T1', examName: 'Prova', startedAt: '2026-01-01T00:00:00Z', finishedAt: '2026-01-01T01:00:00Z', workspaceUri: 'file:///exam', workspacePath: '/exam', extensionVersion: '1', status: 'FINISHED', eventsSha256: 'abc' };
+  const html = generateReportHtml(session, [createEvent(session.sessionId, 'SESSION_FINISHED')]);
+  assert.match(html, /Relatório de Avaliação Prática/);
+  assert.match(html, /session-1/);
+  assert.match(html, /&lt;Aluno&gt;/);
+  assert.doesNotMatch(html, /cdn|https?:\/\//i);
 });

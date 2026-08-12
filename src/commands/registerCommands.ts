@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
 import { SessionManager } from '../session/sessionManager';
+import { WorkspaceMonitor } from '../monitoring/workspaceMonitor';
 
 async function requiredInput(prompt: string): Promise<string | undefined> {
   return vscode.window.showInputBox({ prompt, ignoreFocusOut: true, validateInput: (value) => value.trim() ? undefined : 'Este campo é obrigatório.' }).then((value) => value?.trim());
 }
 
-export function registerCommands(context: vscode.ExtensionContext, sessions: SessionManager): vscode.Disposable[] {
+export function registerCommands(context: vscode.ExtensionContext, sessions: SessionManager, monitor: WorkspaceMonitor): vscode.Disposable[] {
   const start = vscode.commands.registerCommand('senaiExamLogger.startExam', async () => {
     if (sessions.current) { await vscode.window.showInformationMessage('SENAI Exam Logger: já existe uma sessão de prova ativa.'); return; }
     const folders = vscode.workspace.workspaceFolders;
@@ -16,11 +17,14 @@ export function registerCommands(context: vscode.ExtensionContext, sessions: Ses
     const className = await requiredInput('Turma'); if (!className) return;
     const examName = await requiredInput('Nome ou identificação da avaliação'); if (!examName) return;
     const session = await sessions.start(folder, studentName, className, examName);
+    await monitor.sessionStarted(vscode.window.activeTextEditor);
     await vscode.window.showInformationMessage(`SENAI Exam Logger: sessão de prova iniciada. ID: ${session.sessionId}`);
   });
   const finish = vscode.commands.registerCommand('senaiExamLogger.finishExam', async () => {
     if (!sessions.current) { await vscode.window.showInformationMessage('SENAI Exam Logger: nenhuma prova ativa para finalizar.'); return; }
+    await monitor.prepareFinish();
     const session = await sessions.finish(vscode.workspace.textDocuments);
+    monitor.sessionFinished();
     if (!session?.finishedAt) return;
     const minutes = Math.max(1, Math.round((Date.parse(session.finishedAt) - Date.parse(session.startedAt)) / 60_000));
     await vscode.window.showInformationMessage(`SENAI Exam Logger: prova de ${session.studentName} finalizada (${minutes} min). ID: ${session.sessionId}`);
@@ -36,5 +40,10 @@ export function registerCommands(context: vscode.ExtensionContext, sessions: Ses
     await vscode.workspace.fs.createDirectory(target);
     await vscode.commands.executeCommand('revealFileInOS', target);
   });
-  return [start, finish, status, logs];
+  const report = vscode.commands.registerCommand('senaiExamLogger.showLastReport', async () => {
+    const uri = await sessions.sessionStorage.latestFinishedReport();
+    if (!uri) { await vscode.window.showInformationMessage('SENAI Exam Logger: nenhum relatório finalizado foi encontrado.'); return; }
+    await vscode.env.openExternal(uri);
+  });
+  return [start, finish, status, logs, report];
 }
