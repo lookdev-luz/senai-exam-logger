@@ -73,7 +73,7 @@ export class WorkspaceMonitor implements vscode.Disposable {
       const bulkMetadata = { characterCount: change.text.length, lineCount: lineCount(change.text), sha256: sha256(change.text), preview: change.text.slice(0, PREVIEW_LIMIT), timeSinceLastFileChangeMs: previousEdit === undefined ? null : now - previousEdit, timeSinceLastEditorActivityMs: activity.sincePreviousMs, previousActiveFile: this.previousActiveFile, afterIdleDurationMs: activity.endedIdleDurationMs };
       await this.sessions.log('BULK_INSERT', { ...this.fields(event.document), metadata: bulkMetadata });
       await this.correlate(change.text, relativeFile);
-      if (config.get<boolean>('snapshotOnBulkInsert', true)) await this.sessions.snapshot(event.document);
+      if (config.get<boolean>('snapshotOnBulkInsert', true)) await this.sessions.snapshot(event.document, 'BULK_INSERT');
     }
     this.lastEdit.set(relativeFile, now);
   }
@@ -83,7 +83,7 @@ export class WorkspaceMonitor implements vscode.Disposable {
     for (const source of vscode.workspace.textDocuments) { const relative = this.sessions.relative(source.uri); if (!relative || relative === destination) continue; const match = correlateInternalCopy(inserted, source.getText()); if (match && match.similarity >= threshold && (!best || match.similarity > best.similarity)) best = { source, ...match }; }
     if (best) await this.sessions.log('POSSIBLE_INTERNAL_COPY', { relativeFile: destination, metadata: { sourceFile: this.sessions.relative(best.source.uri), destinationFile: destination, matchedCharacters: best.matchedCharacters, insertedCharacters: inserted.length, similarity: best.similarity, matchMethod: best.matchMethod } });
   }
-  private async saved(document: vscode.TextDocument): Promise<void> { if (!this.sessions.contains(document.uri)) return; await this.activity(); await this.sessions.log('DOCUMENT_SAVED', this.fields(document)); await this.sessions.snapshot(document); }
+  private async saved(document: vscode.TextDocument): Promise<void> { if (!this.sessions.contains(document.uri)) return; await this.activity(); await this.sessions.log('DOCUMENT_SAVED', this.fields(document)); await this.sessions.snapshot(document, 'SAVE'); }
   private async files(type: 'FILE_CREATED'|'FILE_DELETED', files: readonly vscode.Uri[]): Promise<void> { for (const uri of files) if (this.sessions.contains(uri)) { await this.activity(); await this.sessions.log(type, { file: uri.toString(), relativeFile: this.sessions.relative(uri) }); } }
   private async renamed(event: vscode.FileRenameEvent): Promise<void> { for (const f of event.files) if (this.sessions.contains(f.oldUri) || this.sessions.contains(f.newUri)) { await this.activity(); await this.sessions.log('FILE_RENAMED', { file: f.newUri.toString(), relativeFile: this.sessions.relative(f.newUri), metadata: { oldRelativeFile: this.sessions.relative(f.oldUri), newRelativeFile: this.sessions.relative(f.newUri) } }); } }
 }

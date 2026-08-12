@@ -28,12 +28,31 @@ Nada é gravado no projeto do aluno. Os dados ficam no `ExtensionContext.globalS
 globalStorageUri/
 └── sessions/<sessionId>/
     ├── session.json
+    ├── summary.json
+    ├── files-summary.csv
     ├── events.jsonl
+    ├── events/
+    │   ├── events.jsonl
+    │   ├── events.pretty.json
+    │   └── events.csv
     ├── report.html
     └── snapshots/<caminho-seguro>/<timestamp>-<hash>.txt
 ```
 
 `session.json` contém ID, aluno, turma, avaliação, início/fim, URI e caminho do workspace, versão e estado. `events.jsonl` contém um objeto JSON por linha, com ID, sessão, timestamp, tipo e dados aplicáveis. A escrita de eventos é serializada para evitar concorrência entre appends.
+
+### Arquivos gerados
+
+- `session.json`: metadados finais, duração, estado e hash do log.
+- `events.jsonl`: log canônico bruto e append-only; a cópia em `events/` facilita navegação.
+- `events/events.pretty.json`: todos os eventos ordenados e indentados para inspeção humana.
+- `events/events.csv`: eventos em UTF-8 com BOM e colunas úteis para Excel.
+- `files-summary.csv`: métricas consolidadas por arquivo.
+- `summary.json`: sessão, estatísticas, arquivos e eventos para revisão em formato estruturado.
+- `snapshots/`: versões deduplicadas por hash, identificadas por horário, motivo e extensão original.
+- `report.html`: relatório offline principal para o professor. Normalmente o professor deve consultar este arquivo, não o JSONL.
+
+O comando **Regenerar Relatório da Última Prova** recria todos os derivados a partir do `session.json` finalizado e do JSONL canônico. **Mostrar Relatório da Última Prova** também regenera automaticamente quando o HTML estiver ausente. Sessões ainda `ACTIVE` não são finalizadas implicitamente.
 
 Eventos: `SESSION_STARTED`, `SESSION_RECOVERED`, `SESSION_FINISHED`, `DOCUMENT_OPENED`, `DOCUMENT_CLOSED`, `DOCUMENT_ACTIVATED`, `DOCUMENT_DEACTIVATED`, `EXTERNAL_DOCUMENT_OPENED`, `DOCUMENT_CHANGED`, `DOCUMENT_SAVED`, `FILE_CREATED`, `FILE_DELETED`, `FILE_RENAMED`, `BULK_INSERT`, `POSSIBLE_INTERNAL_COPY`, `IDLE_STARTED`, `IDLE_ENDED`, `SNAPSHOT_CREATED` e `REPORT_GENERATED`.
 

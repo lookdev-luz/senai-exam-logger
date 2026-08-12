@@ -12,7 +12,10 @@ export interface ExamSession {
   extensionVersion: string;
   status: SessionStatus;
   eventsSha256?: string;
+  durationMs?: number;
 }
+
+export type SnapshotReason = 'SAVE' | 'BULK_INSERT' | 'FINAL';
 
 export type EventType =
   | 'SESSION_STARTED' | 'SESSION_RECOVERED' | 'SESSION_FINISHED'

@@ -18,6 +18,7 @@
     "onCommand:senaiExamLogger.status",
     "onCommand:senaiExamLogger.openLogs",
     "onCommand:senaiExamLogger.showLastReport",
+    "onCommand:senaiExamLogger.regenerateLastReport",
     "onStartupFinished"
   ],
   "contributes": {
@@ -45,6 +46,11 @@
       {
         "command": "senaiExamLogger.showLastReport",
         "title": "Mostrar Relatório da Última Prova",
+        "category": "SENAI Exam Logger"
+      },
+      {
+        "command": "senaiExamLogger.regenerateLastReport",
+        "title": "Regenerar Relatório da Última Prova",
         "category": "SENAI Exam Logger"
       }
     ],

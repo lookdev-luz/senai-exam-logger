@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import * as vscode from 'vscode';
 import { SessionStorage } from '../storage/sessionStorage';
-import type { AuditEvent, EventType, ExamSession } from '../types';
+import type { AuditEvent, EventType, ExamSession, SnapshotReason } from '../types';
 import { createEvent, isPathInside } from '../utils/audit';
 
 export class SessionManager {
@@ -46,29 +46,32 @@ export class SessionManager {
     await this.storage.append(createEvent(this.active.sessionId, type, fields));
   }
 
-  async snapshot(document: vscode.TextDocument): Promise<void> {
+  async snapshot(document: vscode.TextDocument, reason: SnapshotReason): Promise<void> {
     const session = this.active;
     const relativeFile = this.relative(document.uri);
     if (!session || relativeFile === undefined) return;
-    const result = await this.storage.createSnapshot(session, relativeFile, document.getText());
+    const result = await this.storage.createSnapshot(session, relativeFile, document.getText(), reason);
     if (!result) return;
-    await this.log('SNAPSHOT_CREATED', { file: document.uri.toString(), relativeFile, languageId: document.languageId, metadata: { snapshotPath: result.path, sha256: result.hash, size: result.size } });
+    await this.log('SNAPSHOT_CREATED', { file: document.uri.toString(), relativeFile, languageId: document.languageId, metadata: { snapshotPath: result.path, reason, sha256: result.hash, size: result.size } });
   }
 
   async finish(openDocuments: readonly vscode.TextDocument[]): Promise<ExamSession | undefined> {
     const session = this.active;
     if (!session) return undefined;
-    for (const document of openDocuments) if (this.contains(document.uri)) await this.snapshot(document);
-    session.finishedAt = new Date().toISOString();
-    session.status = 'FINISHED';
-    await this.log('SESSION_FINISHED');
-    await this.log('REPORT_GENERATED', { metadata: { report: 'report.html' } });
+    for (const document of openDocuments) if (this.contains(document.uri)) await this.snapshot(document, 'FINAL');
     await this.storage.flush();
-    session.eventsSha256 = await this.storage.eventsHash(session.sessionId);
-    await this.storage.writeSession(session);
-    await this.storage.writeReport(session);
+    const finishedAt = new Date().toISOString();
+    await this.log('SESSION_FINISHED');
+    await this.storage.flush();
+    const finishedSession: ExamSession = { ...session, finishedAt, status: 'FINISHED', durationMs: Date.parse(finishedAt) - Date.parse(session.startedAt), eventsSha256: await this.storage.eventsHash(session.sessionId) };
+    await this.storage.generateDerivedFiles(finishedSession);
+    await this.log('REPORT_GENERATED', { metadata: { report: 'report.html', derivedFiles: ['events/events.pretty.json','events/events.csv','files-summary.csv','summary.json'] } });
+    await this.storage.flush();
+    finishedSession.eventsSha256 = await this.storage.eventsHash(session.sessionId);
+    await this.storage.generateDerivedFiles(finishedSession);
+    await this.storage.writeSession(finishedSession);
     this.acceptingEvents = false;
     this.active = undefined;
-    return session;
+    return finishedSession;
   }
 }
