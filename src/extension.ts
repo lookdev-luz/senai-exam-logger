@@ -1,28 +1,15 @@
 import * as vscode from 'vscode';
+import { registerCommands } from './commands/registerCommands';
+import { WorkspaceMonitor } from './monitoring/workspaceMonitor';
+import { SessionManager } from './session/sessionManager';
+import { SessionStorage } from './storage/sessionStorage';
 
-export function activate(context: vscode.ExtensionContext): void {
-  const startExam = vscode.commands.registerCommand(
-    'senaiExamLogger.startExam',
-    () => vscode.window.showInformationMessage(
-      'SENAI Exam Logger: sessão de prova iniciada.',
-    ),
-  );
-
-  const finishExam = vscode.commands.registerCommand(
-    'senaiExamLogger.finishExam',
-    () => vscode.window.showInformationMessage(
-      'SENAI Exam Logger: sessão de prova finalizada.',
-    ),
-  );
-
-  const status = vscode.commands.registerCommand(
-    'senaiExamLogger.status',
-    () => vscode.window.showInformationMessage(
-      'SENAI Exam Logger está funcionando.',
-    ),
-  );
-
-  context.subscriptions.push(startExam, finishExam, status);
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  const version = String(context.extension.packageJSON.version ?? 'unknown');
+  const sessions = new SessionManager(new SessionStorage(context.globalStorageUri), version);
+  const monitor = new WorkspaceMonitor(sessions);
+  context.subscriptions.push(monitor, ...registerCommands(context, sessions));
+  if (await sessions.recover()) await vscode.window.showInformationMessage('SENAI Exam Logger: sessão ativa recuperada após reinicialização.');
 }
 
 export function deactivate(): void {}

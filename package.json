@@ -14,7 +14,9 @@
   "activationEvents": [
     "onCommand:senaiExamLogger.startExam",
     "onCommand:senaiExamLogger.finishExam",
-    "onCommand:senaiExamLogger.status"
+    "onCommand:senaiExamLogger.status",
+    "onCommand:senaiExamLogger.openLogs",
+    "onStartupFinished"
   ],
   "contributes": {
     "commands": [
@@ -32,13 +34,36 @@
         "command": "senaiExamLogger.status",
         "title": "Status",
         "category": "SENAI Exam Logger"
+      },
+      {
+        "command": "senaiExamLogger.openLogs",
+        "title": "Abrir Pasta de Logs",
+        "category": "SENAI Exam Logger"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "SENAI Exam Logger",
+      "properties": {
+        "senaiExamLogger.bulkInsertCharacterThreshold": {
+          "type": "number",
+          "default": 100,
+          "minimum": 1,
+          "description": "Quantidade mínima de caracteres em uma alteração para registrar BULK_INSERT."
+        },
+        "senaiExamLogger.bulkInsertLineThreshold": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "description": "Quantidade mínima de linhas inseridas em uma alteração para registrar BULK_INSERT."
+        }
+      }
+    }
   },
   "scripts": {
     "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js",
     "check": "tsc --noEmit",
     "typecheck": "npm run check",
+    "test": "tsx --test test/*.test.ts",
     "watch": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js --watch"
   },
   "keywords": [],
@@ -48,6 +73,7 @@
     "@types/node": "^26.2.0",
     "@types/vscode": "^1.125.0",
     "esbuild": "^0.28.2",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "tsx": "^4.20.6"
   }
 }
