@@ -1,19 +1,19 @@
 {
-  "name": "codetrace",
-  "displayName": "CodeTrace - Programming Exam Logger",
+  "name": "senai-exam-logger",
+  "displayName": "SENAI Exam Logger",
   "version": "1.0.0",
-  "description": "Extensão para registro, auditoria e geração de relatórios de sessões de avaliações práticas de programação.",
+  "description": "Extensão para registro e geração de relatórios de sessões de avaliações práticas de programação.",
   "publisher": "lookdev",
   "author": "Lucas Denisson da Luz",
   "license": "ISC",
   "icon": "images/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lookdev-luz/codetrace.git"
+    "url": "https://github.com/lookdev-luz/senai-exam-logger.git"
   },
-  "homepage": "https://github.com/lookdev-luz/codetrace#readme",
+  "homepage": "https://github.com/lookdev-luz/senai-exam-logger#readme",
   "bugs": {
-    "url": "https://github.com/lookdev-luz/codetrace/issues"
+    "url": "https://github.com/lookdev-luz/senai-exam-logger/issues"
   },
   "engines": {
     "vscode": "^1.85.0"
@@ -27,91 +27,89 @@
     "assessment",
     "programming",
     "logger",
-    "audit",
     "report",
-    "code",
     "prova",
     "avaliacao",
     "educacao"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onCommand:codeTrace.startExam",
-    "onCommand:codeTrace.finishExam",
-    "onCommand:codeTrace.status",
-    "onCommand:codeTrace.openLogs",
-    "onCommand:codeTrace.showLastReport",
-    "onCommand:codeTrace.regenerateLastReport",
+    "onCommand:senaiExamLogger.startExam",
+    "onCommand:senaiExamLogger.finishExam",
+    "onCommand:senaiExamLogger.status",
+    "onCommand:senaiExamLogger.openLogs",
+    "onCommand:senaiExamLogger.showLastReport",
+    "onCommand:senaiExamLogger.regenerateLastReport",
     "onStartupFinished"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "codeTrace.startExam",
+        "command": "senaiExamLogger.startExam",
         "title": "Iniciar Prova",
-        "category": "CodeTrace"
+        "category": "SENAI Exam Logger"
       },
       {
-        "command": "codeTrace.finishExam",
+        "command": "senaiExamLogger.finishExam",
         "title": "Finalizar Prova",
-        "category": "CodeTrace"
+        "category": "SENAI Exam Logger"
       },
       {
-        "command": "codeTrace.status",
+        "command": "senaiExamLogger.status",
         "title": "Status",
-        "category": "CodeTrace"
+        "category": "SENAI Exam Logger"
       },
       {
-        "command": "codeTrace.openLogs",
+        "command": "senaiExamLogger.openLogs",
         "title": "Abrir Pasta de Logs",
-        "category": "CodeTrace"
+        "category": "SENAI Exam Logger"
       },
       {
-        "command": "codeTrace.showLastReport",
+        "command": "senaiExamLogger.showLastReport",
         "title": "Mostrar Relatório da Última Prova",
-        "category": "CodeTrace"
+        "category": "SENAI Exam Logger"
       },
       {
-        "command": "codeTrace.regenerateLastReport",
+        "command": "senaiExamLogger.regenerateLastReport",
         "title": "Regenerar Relatório da Última Prova",
-        "category": "CodeTrace"
+        "category": "SENAI Exam Logger"
       }
     ],
     "configuration": {
-      "title": "CodeTrace",
+      "title": "SENAI Exam Logger",
       "properties": {
-        "codeTrace.bulkInsertCharacterThreshold": {
+        "senaiExamLogger.bulkInsertCharacterThreshold": {
           "type": "number",
           "default": 100,
           "minimum": 1,
           "description": "Quantidade mínima de caracteres em uma alteração para registrar BULK_INSERT."
         },
-        "codeTrace.bulkInsertLineThreshold": {
+        "senaiExamLogger.bulkInsertLineThreshold": {
           "type": "number",
           "default": 5,
           "minimum": 1,
           "description": "Quantidade mínima de linhas inseridas em uma alteração para registrar BULK_INSERT."
         },
-        "codeTrace.internalCopySimilarityThreshold": {
+        "senaiExamLogger.internalCopySimilarityThreshold": {
           "type": "number",
           "default": 0.85,
           "minimum": 0,
           "maximum": 1,
           "description": "Similaridade mínima para registrar uma possível origem em outro arquivo interno."
         },
-        "codeTrace.idleThresholdSeconds": {
+        "senaiExamLogger.idleThresholdSeconds": {
           "type": "number",
           "default": 60,
           "minimum": 1,
           "description": "Segundos sem atividade observável no VS Code antes de registrar IDLE_STARTED."
         },
-        "codeTrace.maxStoredInsertedTextLength": {
+        "senaiExamLogger.maxStoredInsertedTextLength": {
           "type": "number",
           "default": 4096,
           "minimum": 0,
           "description": "Tamanho máximo do texto inserido armazenado integralmente por alteração."
         },
-        "codeTrace.snapshotOnBulkInsert": {
+        "senaiExamLogger.snapshotOnBulkInsert": {
           "type": "boolean",
           "default": true,
           "description": "Cria snapshot após uma inserção em massa, ignorando conteúdo idêntico ao último snapshot."
