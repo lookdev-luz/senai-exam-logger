@@ -2,14 +2,35 @@
   "name": "senai-exam-logger",
   "displayName": "SENAI Exam Logger",
   "version": "1.0.0",
-  "description": "Extensão privada para avaliações práticas de programação do SENAI.",
-  "private": true,
-  "publisher": "senai-private",
+  "description": "Extensão para registro e geração de relatórios de sessões de avaliações práticas de programação.",
+  "publisher": "lookdev",
+  "author": "Lucas Denisson da Luz",
+  "license": "ISC",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lookdev-luz/senai-exam-logger.git"
+  },
+  "homepage": "https://github.com/lookdev-luz/senai-exam-logger#readme",
+  "bugs": {
+    "url": "https://github.com/lookdev-luz/senai-exam-logger/issues"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "Education"
+  ],
+  "keywords": [
+    "education",
+    "exam",
+    "assessment",
+    "programming",
+    "logger",
+    "report",
+    "prova",
+    "avaliacao",
+    "educacao"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
@@ -70,19 +91,27 @@
           "description": "Quantidade mínima de linhas inseridas em uma alteração para registrar BULK_INSERT."
         },
         "senaiExamLogger.internalCopySimilarityThreshold": {
-          "type": "number", "default": 0.85, "minimum": 0, "maximum": 1,
+          "type": "number",
+          "default": 0.85,
+          "minimum": 0,
+          "maximum": 1,
           "description": "Similaridade mínima para registrar uma possível origem em outro arquivo interno."
         },
         "senaiExamLogger.idleThresholdSeconds": {
-          "type": "number", "default": 60, "minimum": 1,
+          "type": "number",
+          "default": 60,
+          "minimum": 1,
           "description": "Segundos sem atividade observável no VS Code antes de registrar IDLE_STARTED."
         },
         "senaiExamLogger.maxStoredInsertedTextLength": {
-          "type": "number", "default": 4096, "minimum": 0,
+          "type": "number",
+          "default": 4096,
+          "minimum": 0,
           "description": "Tamanho máximo do texto inserido armazenado integralmente por alteração."
         },
         "senaiExamLogger.snapshotOnBulkInsert": {
-          "type": "boolean", "default": true,
+          "type": "boolean",
+          "default": true,
           "description": "Cria snapshot após uma inserção em massa, ignorando conteúdo idêntico ao último snapshot."
         }
       }
@@ -94,18 +123,15 @@
     "typecheck": "npm run check",
     "test": "tsx --test test/*.test.ts",
     "lint": "tsc --noEmit",
-    "package": "npm run build && vsce package --allow-missing-repository --out senai-exam-logger-${npm_package_version}.vsix",
+    "package": "npm run build && vsce package --out senai-exam-logger-${npm_package_version}.vsix",
     "watch": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js --watch"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "@types/node": "^26.2.0",
     "@types/vscode": "1.85.0",
+    "@vscode/vsce": "^3.6.0",
     "esbuild": "^0.28.2",
-    "typescript": "^7.0.2",
     "tsx": "^4.20.6",
-    "@vscode/vsce": "^3.6.0"
+    "typescript": "^7.0.2"
   }
 }
