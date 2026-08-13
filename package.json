@@ -123,7 +123,7 @@
     "typecheck": "npm run check",
     "test": "tsx --test test/*.test.ts",
     "lint": "tsc --noEmit",
-    "package": "npm run build && vsce package --out senai-exam-logger-${npm_package_version}.vsix",
+    "package": "npm run build && vsce package",
     "watch": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js --watch"
   },
   "devDependencies": {
